@@ -8,7 +8,9 @@ import java.util.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 
 
@@ -25,13 +27,14 @@ class RapidRoll extends JFrame implements Runnable, KeyListener {
     boolean goup = false, dead = false, givelife = false, glf = true, lcf = true, cf = false, wait = true;
     Thread myt;
     JMenuBar mymbar;
-    JMenu game, help, level;
+    JMenu game, help, level, rank;
     JCheckBoxMenuItem easy, med, hard;
     ButtonGroup bg;
     ImageIcon ic1, ic2, ic3, iclife, icgameover, icready;
     
     
     String playerName = "Player";
+    
     
     public Connection dbConnect() {    
         Connection conn = null;
@@ -42,14 +45,6 @@ class RapidRoll extends JFrame implements Runnable, KeyListener {
             String password = "";
             Class.forName(driver);            
             conn = DriverManager.getConnection(url, username, password);
-            
-//            String query = "INSERT INTO scores(player, score) VALUES(?, ?)";
-//            PreparedStatement preparedStmt = conn.prepareStatement(query);
-//            preparedStmt.setString(1, playerName);
-//            preparedStmt.setInt(2, score);
-//            preparedStmt.execute();
-
-//            ResultSet rs = stmt.executeQuery(query)
                     
             System.out.println("Connected na");
         } catch (ClassNotFoundException e) {
@@ -279,6 +274,7 @@ class RapidRoll extends JFrame implements Runnable, KeyListener {
 
         mymbar.add(level);
 
+
         help = new JMenu("Help");
 
         JMenuItem creator = new JMenuItem("Creator");
@@ -300,9 +296,79 @@ class RapidRoll extends JFrame implements Runnable, KeyListener {
         help.add(creator);
         help.add(instruction);
         mymbar.add(help);
+        
+        // ******************************************************
+        // BUHAT LEADER BOARD
+        // *******************************************************
+        
+        
+        
+        
+        rank = new JMenu("Rank");
+        
+        JMenuItem leaderboard = new JMenuItem("Leader Board");
+        JMenuItem best = new JMenuItem("Best Player");
+
+        leaderboard.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                getRank(1); // gusto nako makita tanan so 1
+                
+                JOptionPane.showMessageDialog(p2, "All Players");
+            }
+        });
+        best.addActionListener(new ActionListener() {
+
+            public void actionPerformed(ActionEvent e) {
+                String bp = getRank(2); // get one best player
+                
+                JOptionPane.showMessageDialog(p2, "Best Player \n " + bp);
+            }
+        });
+        
+        rank.add(leaderboard);
+        rank.add(best);
+        mymbar.add(rank);
+        
 
         setJMenuBar(mymbar);
     }
+    
+    public String getRank(int type) {
+        Connection conn = dbConnect();
+            // ang type 1 ang all the players list
+            try {
+                Statement stmt = conn.createStatement();
+                ResultSet rs = null;
+                if (type == 1) {
+                     rs = stmt.executeQuery("SELECT player, score FROM scores");
+                     System.out.println("SELECTED 1");
+                    while (rs.next()) {
+                        String plyr = rs.getString("player");
+                        String scr = rs.getString("score");
+                        System.out.println(plyr + " :  " + scr);
+                    }
+                }
+               
+                else if(type == 2) {                    
+                    rs = stmt.executeQuery("SELECT player, score FROM scores WHERE score = (SELECT max(score) FROM scores)");
+                    
+                    while (rs.next()) {
+                        String plyr = rs.getString("player");
+                        String scr = rs.getString("score");
+                        System.out.println(plyr + " :  " + scr);
+                        return plyr + " " + scr;
+                    }
+                    
+                }
+  
+            }catch(SQLException e) {
+                System.out.println(e);
+            }
+        return null;
+    }
+    
+    
 
     public void reset() {
         myt.stop();
